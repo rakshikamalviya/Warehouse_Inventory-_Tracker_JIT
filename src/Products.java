@@ -25,4 +25,29 @@ public class Products {
     public int getReorderThreshold() {
         return reorderThreshold;
     }
+
+public synchronized void increaseQuantity(int amount) {
+    if (amount < 0) {
+        throw new IllegalArgumentException("Amount must be non-negative");
+    }
+    this.quantity += amount;
+}
+
+public synchronized void decreaseQuantity(int amount) {
+    if (amount < 0) {
+        throw new IllegalArgumentException("Amount must be non-negative");
+    }
+    if (amount > this.quantity) {
+        throw new IllegalArgumentException("Insufficient stock available");
+    }
+    this.quantity -= amount;
+}
+
+@Override
+public String toString() {
+    return String.format(
+        "Product[id=%d, name=%s, quantity=%d, threshold=%d]",id, name, quantity, reorderThreshold
+    );
+}
+
 }
