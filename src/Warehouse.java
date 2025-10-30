@@ -1,64 +1,55 @@
-import java.util.Scanner;
-
 public class Warehouse {
-    public static void main(String[] args) {
-        Inventory inventory = new Inventory();
-        Scanner scanner = new Scanner(System.in);
-        int choice;
+    private Inventory inventory;
+    private Alert alertService;
+    private EventLogger logger;
 
-        do {
-            System.out.println("\nWarehouse Inventory Tracker");
-            System.out.println("1. Add Product");
-            System.out.println("2. Remove Product");
-            System.out.println("3. Display All Products");
-            System.out.println("4. Check Reorder Alerts");
-            System.out.println("5. Exit");
-            System.out.print("Enter your choice: ");
-            choice = scanner.nextInt();
+    public Warehouse() {
+        this.inventory = new Inventory();
+        this.alertService = new Alert();
+        this.logger = new EventLogger();
+    }
 
-            switch (choice) {
-                case 1:
-                    System.out.print("Enter Product ID: ");
-                    int id = scanner.nextInt();
-                    scanner.nextLine(); 
+    public void addProduct(int id, String name, int qty, int threshold) {
+        Products prod = new Products(id, name, qty, threshold);
+        inventory.addProduct(prod);
+        logger.log("Product added: " + name + " (Qty: " + qty + ")");
+    }
 
-                    System.out.print("Enter Product Name: ");
-                    String name = scanner.nextLine();
+    public void receiveShipment(int productId, int qty) {
+        Products prod = inventory.getProduct(productId);
+        if (prod == null) {
+            System.out.println("Product not found!");
+            return;
+        }
 
-                    System.out.print("Enter Quantity: ");
-                    int quantity = scanner.nextInt();
+        prod.setQuantity(prod.getQuantity() + qty);
+        logger.log("Received shipment for " + prod.getName() + ": +" + qty + " units");
+        System.out.println("Updated stock: " + prod.getQuantity());
+    }
 
-                    System.out.print("Enter Reorder Threshold: ");
-                    int threshold = scanner.nextInt();
+    public void fulfillOrder(int productId, int qty) {
+        Products prod = inventory.getProduct(productId);
+        if (prod == null) {
+            System.out.println("Product not found!");
+            return;
+        }
 
-                    Product newProduct = new Product(id, name, quantity, threshold);
-                    inventory.addProduct(newProduct);
-                    break;
+        if (prod.getQuantity() < qty) {
+            System.out.println("Insufficient stock for " + prod.getName());
+            return;
+        }
 
-                case 2:
-                    System.out.print("Enter Product ID to Remove: ");
-                    int removeId = scanner.nextInt();
-                    inventory.removeProduct(removeId);
-                    break;
+        prod.setQuantity(prod.getQuantity() - qty);
+        logger.log("Order fulfilled for " + prod.getName() + ": -" + qty + " units");
+        System.out.println("Remaining stock " + prod.getQuantity());
 
-                case 3:
-                    inventory.displayAllProducts();
-                    break;
+        if (prod.isLowStock()) {
+            alertService.triggerLowStockAlert(prod);
+            logger.log("Low stock alert triggered for " + prod.getName());
+        }
+    }
 
-                case 4:
-                    inventory.checkReorderAlerts();
-                    break;
-
-                case 5:
-                    System.out.println("Exiting... Thank you!");
-                    break;
-
-                default:
-                    System.out.println("Invalid choice! Try again.");
-            }
-        } while (choice != 5);
-
-        scanner.close(); 
+    public void showInventory() {
+        inventory.displayAll();
     }
 }
-
